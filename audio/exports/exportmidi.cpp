@@ -279,7 +279,7 @@ bool ExportMidi::write(QIODevice* device, bool midiExpandRepeats, bool exportRPN
                         char channel = part->masterScore()->midiChannel(ch->channel());
 
                         if (staff->isTop()) {
-                              track.insert(0, MidiEvent(ME_CONTROLLER, channel, CTRL_RESET_ALL_CTRL, 0));
+                              // track.insert(0, MidiEvent(ME_CONTROLLER, channel, CTRL_RESET_ALL_CTRL, 0));
                               // We need this to get the correct pitch of bends
                               // Hidden under preferences because some software
                               // crashes when receiving RPNs: https://musescore.org/en/node/37431
@@ -347,10 +347,10 @@ bool ExportMidi::write(QIODevice* device, bool midiExpandRepeats, bool exportRPN
 
                               if (event.type() == ME_NOTEON) {
                                     // use the note values instead of the event values if portamento is suppressed
-                                    if (!exportRPNs && event.portamento()) 
+                                    if (!exportRPNs && event.portamento())
                                           track.insert(pauseMap.addPauseTicks(i->first), MidiEvent(ME_NOTEON, channel,
                                                 event.note()->pitch(), event.velo()));
-                                    else  
+                                    else
                                           track.insert(pauseMap.addPauseTicks(i->first), MidiEvent(ME_NOTEON, channel,
                                                 event.pitch(), event.velo()));
                                     }

@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
     - 3.x
-  schedule:
-    - cron: '0 4 */1 * *' # At 04:00 on every day-of-month
   workflow_dispatch:
     inputs:
       build_mode:
@@ -15,7 +13,7 @@ on:
       publish:
         description: 'Publish to FTP: on - publish'
         required: false
-        default: 'off'   
+        default: 'off'
 
 jobs:
   build_x64:
@@ -36,12 +34,12 @@ jobs:
         BUILD_MODE=$(cat ./build.artifacts/env/build_mode.env)
 
         DO_PUBLISH='false'
-        if [[ "${{ github.event.inputs.publish }}" == "on" || "$BUILD_MODE" == "nightly_build" ]]; then 
+        if [[ "${{ github.event.inputs.publish }}" == "on" || "$BUILD_MODE" == "nightly_build" ]]; then
           DO_PUBLISH='true'
-          if [ -z "${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }}" ]; then 
-            echo "warning: not set OSUOSL_SSH_ENCRYPT_SECRET, publish disabled" 
+          if [ -z "${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }}" ]; then
+            echo "warning: not set OSUOSL_SSH_ENCRYPT_SECRET, publish disabled"
             DO_PUBLISH='false'
-          fi  
+          fi
         fi
 
         DO_CHECKSUM='true'
@@ -74,7 +72,7 @@ jobs:
         IF ${{ secrets.TELEMETRY_TRACK_ID != 0 }} == true ( SET T_ID=${{ secrets.TELEMETRY_TRACK_ID }} ) ELSE ( SET T_ID="''" )
         IF ${{ secrets.SENTRY_SERVER_MU3_KEY != 0 }} == true ( SET C_KEY=${{ secrets.SENTRY_SERVER_MU3_KEY }} ) ELSE ( SET C_KEY="''" )
         build\ci\windows\build.bat -n ${{ github.run_id }} --telemetry %T_ID% --sentrykey %C_KEY%
-    - name: Package 
+    - name: Package
       if: env.DO_BUILD == 'true'
       shell: cmd
       run: |
@@ -83,25 +81,25 @@ jobs:
         IF ${{ env.BUILD_MODE }} == stable_build ( SET GUID=${{ secrets.WIN_MSI_STABLE_GUID }} ) ELSE ( SET GUID=${{ secrets.WIN_MSI_TESTING_GUID }} )
         build\ci\windows\package.bat --signsecret %S_S% --signpass %S_P% --guid %GUID%
     - name: Checksum
-      if: env.DO_CHECKSUM == 'true' 
+      if: env.DO_CHECKSUM == 'true'
       run: |
-        bash ./build/ci/tools/checksum.sh     
+        bash ./build/ci/tools/checksum.sh
     - name: Publish package
       if: env.DO_PUBLISH == 'true'
       shell: bash
       run: |
         bash ./build/ci/tools/osuosl/publish.sh -s ${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }} --os windows -v 3
     - name: AppCast
-      if: env.DO_APPCAST == 'true'   
+      if: env.DO_APPCAST == 'true'
       shell: bash
       run: |
-        bash ./build/ci/tools/sparkle_appcast_gen.sh -p windows 
+        bash ./build/ci/tools/sparkle_appcast_gen.sh -p windows
     - name: Upload artifacts on GitHub
       if: ${{ always() }}
       uses: actions/upload-artifact@v2
       with:
         name: MuseScore_x64_${{ github.run_id }}
-        path: build.artifacts\ 
+        path: build.artifacts\
   build_x32:
     runs-on: windows-2019
     steps:
@@ -124,20 +122,20 @@ jobs:
         echo "BUILD_MODE=$BUILD_MODE" >> $GITHUB_ENV
 
         DO_BUILD='false'
-        if [[ "$BUILD_MODE" == "testing_build" || "$BUILD_MODE" == "stable_build" ]]; then 
-          DO_BUILD='true'  
+        if [[ "$BUILD_MODE" == "testing_build" || "$BUILD_MODE" == "stable_build" ]]; then
+          DO_BUILD='true'
         fi
         echo "!! ATTENTION !! Windows x32 build run only for 'testing_build' and 'stable_build', and SKIP for 'pull requests' and nightly"
         echo "DO_BUILD=$DO_BUILD" >> $GITHUB_ENV
         echo "DO_BUILD: $DO_BUILD"
 
         DO_PUBLISH='false'
-        if [ "${{ github.event.inputs.publish }}" == "on" ]; then 
+        if [ "${{ github.event.inputs.publish }}" == "on" ]; then
           DO_PUBLISH='true'
-          if [ -z "${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }}" ]; then 
-            echo "warning: not set OSUOSL_SSH_ENCRYPT_SECRET, publish disabled" 
+          if [ -z "${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }}" ]; then
+            echo "warning: not set OSUOSL_SSH_ENCRYPT_SECRET, publish disabled"
             DO_PUBLISH='false'
-          fi  
+          fi
         fi
         echo "DO_PUBLISH=$DO_PUBLISH" >> $GITHUB_ENV
         echo "DO_PUBLISH: $DO_PUBLISH"
@@ -153,7 +151,7 @@ jobs:
         IF ${{ secrets.TELEMETRY_TRACK_ID != 0 }} == true ( SET T_ID=${{ secrets.TELEMETRY_TRACK_ID }} ) ELSE ( SET T_ID="''" )
         IF ${{ secrets.SENTRY_SERVER_MU3_KEY != 0 }} == true ( SET C_KEY=${{ secrets.SENTRY_SERVER_MU3_KEY }} ) ELSE ( SET C_KEY="''" )
         build\ci\windows\build.bat -b 32 -n ${{ github.run_id }} --telemetry %T_ID% --sentrykey %C_KEY%
-    - name: Package 
+    - name: Package
       if: env.DO_BUILD == 'true'
       shell: cmd
       run: |
@@ -161,7 +159,7 @@ jobs:
         IF ${{ secrets.WIN_SIGN_CERTIFICATE_PASSWORD != 0 }} == true ( SET S_P=${{ secrets.WIN_SIGN_CERTIFICATE_PASSWORD }} ) ELSE ( SET S_P="''" )
         IF ${{ env.BUILD_MODE }} == stable_build ( SET GUID=${{ secrets.WIN_MSI_STABLE_GUID }} ) ELSE ( SET GUID=${{ secrets.WIN_MSI_TESTING_GUID }} )
         build\ci\windows\package.bat -b 32 --signsecret %S_S% --signpass %S_P% --guid %GUID%
-    - name: Checksum 
+    - name: Checksum
       if: env.DO_BUILD == 'true'
       run: |
         bash ./build/ci/tools/checksum.sh
@@ -174,13 +172,13 @@ jobs:
       if: env.DO_BUILD == 'true'
       shell: bash
       run: |
-        bash ./build/ci/tools/sparkle_appcast_gen.sh -p windows        
+        bash ./build/ci/tools/sparkle_appcast_gen.sh -p windows
     - name: Upload artifacts on GitHub
       if: env.DO_BUILD == 'true'
       uses: actions/upload-artifact@v2
       with:
         name: MuseScore_x86_${{ github.run_id }}
-        path: build.artifacts\     
+        path: build.artifacts\
   build_portable:
     runs-on: windows-2019
     steps:
@@ -203,20 +201,20 @@ jobs:
         echo "BUILD_MODE=$BUILD_MODE" >> $GITHUB_ENV
 
         DO_BUILD='false'
-        if [[ "$BUILD_MODE" == "testing_build" || "$BUILD_MODE" == "stable_build" ]]; then 
-          DO_BUILD='true'  
+        if [[ "$BUILD_MODE" == "testing_build" || "$BUILD_MODE" == "stable_build" ]]; then
+          DO_BUILD='true'
         fi
         echo "!! ATTENTION !! Windows portable build run only for 'testing_build' and 'stable_build', and SKIP for 'pull requests' and nightly"
         echo "DO_BUILD=$DO_BUILD" >> $GITHUB_ENV
-        echo "DO_BUILD: $DO_BUILD" 
+        echo "DO_BUILD: $DO_BUILD"
 
         DO_PUBLISH='false'
-        if [ "${{ github.event.inputs.publish }}" == "on" ]; then 
+        if [ "${{ github.event.inputs.publish }}" == "on" ]; then
           DO_PUBLISH='true'
-          if [ -z "${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }}" ]; then 
-            echo "warning: not set OSUOSL_SSH_ENCRYPT_SECRET, publish disabled" 
+          if [ -z "${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }}" ]; then
+            echo "warning: not set OSUOSL_SSH_ENCRYPT_SECRET, publish disabled"
             DO_PUBLISH='false'
-          fi  
+          fi
         fi
         echo "DO_PUBLISH=$DO_PUBLISH" >> $GITHUB_ENV
         echo "DO_PUBLISH: $DO_PUBLISH"
@@ -232,32 +230,31 @@ jobs:
         IF ${{ secrets.TELEMETRY_TRACK_ID != 0 }} == true ( SET T_ID=${{ secrets.TELEMETRY_TRACK_ID }} ) ELSE ( SET T_ID="''" )
         IF ${{ secrets.SENTRY_SERVER_MU3_KEY != 0 }} == true ( SET C_KEY=${{ secrets.SENTRY_SERVER_MU3_KEY }} ) ELSE ( SET C_KEY="''" )
         build\ci\windows\build.bat -b 32 --portable ON -n ${{ github.run_id }} --telemetry %T_ID% --sentrykey %C_KEY%
-    - name: Package 
+    - name: Package
       if: env.DO_BUILD == 'true'
       shell: cmd
-      run: |      
+      run: |
         IF ${{ secrets.WIN_SIGN_CERTIFICATE_ENCRYPT_SECRET != 0 }} == true ( SET S_S=${{ secrets.WIN_SIGN_CERTIFICATE_ENCRYPT_SECRET }} ) ELSE ( SET S_S="''" )
         IF ${{ secrets.WIN_SIGN_CERTIFICATE_PASSWORD != 0 }} == true ( SET S_P=${{ secrets.WIN_SIGN_CERTIFICATE_PASSWORD }} ) ELSE ( SET S_P="''" )
         build\ci\windows\package.bat -b 32 --portable ON --signsecret %S_S% --signpass %S_P%
-    - name: Checksum 
+    - name: Checksum
       shell: bash
       if: env.DO_BUILD == 'true'
       run: |
-        bash ./build/ci/tools/checksum.sh     
+        bash ./build/ci/tools/checksum.sh
     - name: Publish package
       if: env.DO_PUBLISH == 'true'
       shell: bash
       run: |
-        bash ./build/ci/tools/osuosl/publish.sh -s ${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }} --os windows -v 3   
+        bash ./build/ci/tools/osuosl/publish.sh -s ${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }} --os windows -v 3
     - name: AppCast
       if: env.DO_BUILD == 'true'
       shell: bash
       run: |
-        bash ./build/ci/tools/sparkle_appcast_gen.sh -p windows       
+        bash ./build/ci/tools/sparkle_appcast_gen.sh -p windows
     - name: Upload artifacts on GitHub
       if: env.DO_BUILD == 'true'
       uses: actions/upload-artifact@v2
       with:
         name: MuseScore_Portable_${{ github.run_id }}
         path: build.artifacts\
-                

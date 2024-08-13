@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
     - 3.x
-  schedule:
-    - cron: '0 4 */1 * *' # At 04:00 on every day-of-month
   workflow_dispatch:
     inputs:
       build_mode:
@@ -35,12 +33,12 @@ jobs:
         DO_BUILD='true'
 
         DO_PUBLISH='false'
-        if [[ "${{ github.event.inputs.publish }}" == "on" || "$BUILD_MODE" == "nightly_build" ]]; then 
+        if [[ "${{ github.event.inputs.publish }}" == "on" || "$BUILD_MODE" == "nightly_build" ]]; then
           DO_PUBLISH='true'
-          if [ -z "${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }}" ]; then 
-            echo "warning: not set OSUOSL_SSH_ENCRYPT_SECRET, publish disabled" 
+          if [ -z "${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }}" ]; then
+            echo "warning: not set OSUOSL_SSH_ENCRYPT_SECRET, publish disabled"
             DO_PUBLISH='false'
-          fi  
+          fi
         fi
 
         echo "BUILD_MODE=$BUILD_MODE" >> $GITHUB_ENV
@@ -59,11 +57,11 @@ jobs:
       run: |
         T_ID=${{ secrets.TELEMETRY_TRACK_ID }}; if [ -z "$T_ID" ]; then T_ID="''"; fi
         sudo bash ./build/ci/linux/build.sh -n ${{ github.run_id }} --telemetry $T_ID
-    - name: Package 
+    - name: Package
       if: env.DO_BUILD == 'true'
       run: |
         sudo bash ./build/ci/linux/package.sh
-    - name: Checksum 
+    - name: Checksum
       if: env.DO_BUILD == 'true'
       run: |
         sudo bash ./build/ci/tools/checksum.sh
@@ -94,6 +92,6 @@ jobs:
       run: |
         mkdir -p build.artifacts/env
         ./build/ci/linux/build.sh -n ${{ github.run_id }} --build_mode mtests
-    - name: Run mtests 
+    - name: Run mtests
       run: |
         ./build/ci/linux/runmtests.sh
